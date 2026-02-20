@@ -34,7 +34,7 @@ canvas{border:2px solid #000;background:#fff;touch-action:none;}
 
 <div id="info"></div>
 <div id="strokeArea"></div>
-<canvas id="canvas" width="400" height="400"></canvas>
+<canvas id="canvas"></canvas>
 <div id="result"></div>
 
 <script>
@@ -45,6 +45,7 @@ if('serviceWorker' in navigator){
 let data;
 let canvas=document.getElementById("canvas");
 let ctx=canvas.getContext("2d");
+
 let drawing=false;
 let eraser=false;
 let strokeCount=0;
@@ -53,6 +54,22 @@ let correctStrokeCount=0;
 let penSize=8;
 let eraserSize=25;
 
+// ===== Retina対応 =====
+function resizeCanvas(){
+  const ratio=window.devicePixelRatio||1;
+  const size=400;
+
+  canvas.width=size*ratio;
+  canvas.height=size*ratio;
+  canvas.style.width=size+"px";
+  canvas.style.height=size+"px";
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(ratio,ratio);
+}
+resizeCanvas();
+
+// ===== データ読み込み =====
 fetch("kanji-data.json")
 .then(res=>res.json())
 .then(json=>{
@@ -60,6 +77,7 @@ fetch("kanji-data.json")
   setupGrades();
 });
 
+// ===== 学年 =====
 function setupGrades(){
   let g=document.getElementById("grade");
   Object.keys(data).forEach(grade=>{
@@ -72,6 +90,7 @@ function setupGrades(){
   loadKanji();
 }
 
+// ===== 漢字 =====
 function loadKanji(){
   let grade=document.getElementById("grade").value;
   let k=document.getElementById("kanji");
@@ -86,6 +105,7 @@ function loadKanji(){
   showKanji();
 }
 
+// ===== 漢字表示 =====
 function showKanji(){
   strokeCount=0;
   clearCanvas();
@@ -102,10 +122,17 @@ function showKanji(){
   loadSVG(kan);
 }
 
+// ===== SVG読み込み =====
 function loadSVG(kanji){
   let code=kanji.charCodeAt(0).toString(16);
+
   fetch("kanji-svg/"+code+".svg")
-  .then(res=>res.text())
+  .then(res=>{
+    if(!res.ok){
+      throw new Error("SVGが見つかりません");
+    }
+    return res.text();
+  })
   .then(svg=>{
     document.getElementById("strokeArea").innerHTML=svg;
     let paths=document.querySelectorAll("#strokeArea svg path");
@@ -119,23 +146,34 @@ function loadSVG(kanji){
         p.style.strokeDashoffset=0;
       },i*600);
     });
+  })
+  .catch(()=>{
+    document.getElementById("strokeArea").innerHTML=
+      "<div style='color:red'>書き順SVGが見つかりません</div>";
+    correctStrokeCount=0;
   });
 }
 
-canvas.addEventListener("pointerdown",e=>{
+// ===== 描画処理（完全修正版） =====
+
+canvas.addEventListener("pointerdown",(e)=>{
   drawing=true;
   strokeCount++;
-  draw(e);
-});
-canvas.addEventListener("pointermove",draw);
-canvas.addEventListener("pointerup",()=>drawing=false);
-canvas.addEventListener("pointerleave",()=>drawing=false);
 
-function draw(e){
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+
+  ctx.beginPath();     // ← 前の線を完全に切る
+  ctx.moveTo(x,y);     // ← 新しい線開始
+});
+
+canvas.addEventListener("pointermove",(e)=>{
   if(!drawing)return;
-  let rect=canvas.getBoundingClientRect();
-  let x=e.clientX-rect.left;
-  let y=e.clientY-rect.top;
+
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
 
   if(eraser){
     ctx.clearRect(x-eraserSize/2,y-eraserSize/2,eraserSize,eraserSize);
@@ -145,11 +183,20 @@ function draw(e){
     ctx.strokeStyle="black";
     ctx.lineTo(x,y);
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x,y);
   }
-}
+});
 
+canvas.addEventListener("pointerup",()=>{
+  drawing=false;
+  ctx.beginPath();  // ← これが重要
+});
+
+canvas.addEventListener("pointerleave",()=>{
+  drawing=false;
+  ctx.beginPath();
+});
+
+// ===== ボタン =====
 function clearCanvas(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.beginPath();
@@ -163,6 +210,11 @@ function toggleEraser(){
 function checkAnswer(){
   let result=document.getElementById("result");
   let kan=document.getElementById("kanji").value;
+
+  if(correctStrokeCount===0){
+    result.innerHTML="<span class='wrong'>SVG未設定</span>";
+    return;
+  }
 
   if(strokeCount===correctStrokeCount){
     result.innerHTML="<span class='correct'>正解！</span>";
