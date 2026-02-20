@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>漢字練習 完全版</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body{font-family:sans-serif;text-align:center;background:#f2f2f2;}
+select,button{font-size:18px;padding:8px;margin:5px;}
+canvas{border:2px solid #000;background:#fff;touch-action:none;}
+#strokeArea svg{width:200px;height:200px;}
+.correct{color:green;font-weight:bold;}
+.wrong{color:red;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<h2>漢字練習アプリ</h2>
+
+学年：
+<select id="grade"></select>
+
+漢字：
+<select id="kanji"></select>
+
+<br>
+
+<button onclick="clearCanvas()">消す</button>
+<button onclick="toggleEraser()">消しゴム</button>
+<button onclick="checkAnswer()">判定</button>
+
+<div id="info"></div>
+<div id="strokeArea"></div>
+<canvas id="canvas" width="400" height="400"></canvas>
+<div id="result"></div>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('service-worker.js');
+}
+
+let data;
+let canvas=document.getElementById("canvas");
+let ctx=canvas.getContext("2d");
+let drawing=false;
+let eraser=false;
+let strokeCount=0;
+let correctStrokeCount=0;
+
+let penSize=8;
+let eraserSize=25;
+
+fetch("kanji-data.json")
+.then(res=>res.json())
+.then(json=>{
+  data=json;
+  setupGrades();
+});
+
+function setupGrades(){
+  let g=document.getElementById("grade");
+  Object.keys(data).forEach(grade=>{
+    let opt=document.createElement("option");
+    opt.value=grade;
+    opt.textContent=grade+"年生";
+    g.appendChild(opt);
+  });
+  g.onchange=loadKanji;
+  loadKanji();
+}
+
+function loadKanji(){
+  let grade=document.getElementById("grade").value;
+  let k=document.getElementById("kanji");
+  k.innerHTML="";
+  Object.keys(data[grade]).forEach(kan=>{
+    let opt=document.createElement("option");
+    opt.value=kan;
+    opt.textContent=kan;
+    k.appendChild(opt);
+  });
+  k.onchange=showKanji;
+  showKanji();
+}
+
+function showKanji(){
+  strokeCount=0;
+  clearCanvas();
+
+  let grade=document.getElementById("grade").value;
+  let kan=document.getElementById("kanji").value;
+  let info=data[grade][kan];
+
+  document.getElementById("info").innerHTML=
+    "音："+info.on.join(", ")+"<br>"+
+    "訓："+info.kun.join(", ")+"<br>"+
+    "熟語："+info.jukugo.join(", ");
+
+  loadSVG(kan);
+}
+
+function loadSVG(kanji){
+  let code=kanji.charCodeAt(0).toString(16);
+  fetch("kanji-svg/"+code+".svg")
+  .then(res=>res.text())
+  .then(svg=>{
+    document.getElementById("strokeArea").innerHTML=svg;
+    let paths=document.querySelectorAll("#strokeArea svg path");
+    correctStrokeCount=paths.length;
+
+    paths.forEach((p,i)=>{
+      p.style.strokeDasharray=1000;
+      p.style.strokeDashoffset=1000;
+      setTimeout(()=>{
+        p.style.transition="stroke-dashoffset 0.5s";
+        p.style.strokeDashoffset=0;
+      },i*600);
+    });
+  });
+}
+
+canvas.addEventListener("pointerdown",e=>{
+  drawing=true;
+  strokeCount++;
+  draw(e);
+});
+canvas.addEventListener("pointermove",draw);
+canvas.addEventListener("pointerup",()=>drawing=false);
+canvas.addEventListener("pointerleave",()=>drawing=false);
+
+function draw(e){
+  if(!drawing)return;
+  let rect=canvas.getBoundingClientRect();
+  let x=e.clientX-rect.left;
+  let y=e.clientY-rect.top;
+
+  if(eraser){
+    ctx.clearRect(x-eraserSize/2,y-eraserSize/2,eraserSize,eraserSize);
+  }else{
+    ctx.lineWidth=penSize;
+    ctx.lineCap="round";
+    ctx.strokeStyle="black";
+    ctx.lineTo(x,y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+  }
+}
+
+function clearCanvas(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.beginPath();
+  strokeCount=0;
+}
+
+function toggleEraser(){
+  eraser=!eraser;
+}
+
+function checkAnswer(){
+  let result=document.getElementById("result");
+  let kan=document.getElementById("kanji").value;
+
+  if(strokeCount===correctStrokeCount){
+    result.innerHTML="<span class='correct'>正解！</span>";
+    localStorage.setItem(kan,"OK");
+  }else{
+    result.innerHTML="<span class='wrong'>画数："+strokeCount+" / 正："+correctStrokeCount+"</span>";
+    localStorage.setItem(kan,"NG");
+  }
+}
+</script>
+
+</body>
+</html>
