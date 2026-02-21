@@ -58,12 +58,10 @@ let eraserSize=25;
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
   const size=400;
-
   canvas.width=size*ratio;
   canvas.height=size*ratio;
   canvas.style.width=size+"px";
   canvas.style.height=size+"px";
-
   ctx.setTransform(1,0,0,1,0,0);
   ctx.scale(ratio,ratio);
 }
@@ -124,13 +122,12 @@ function showKanji(){
 
 // ===== SVG読み込み =====
 function loadSVG(kanji){
-  let code=kanji.charCodeAt(0).toString(16);
+  // ✅ 16進数コードを4桁にゼロ埋め
+  let code=kanji.charCodeAt(0).toString(16).padStart(4,"0");
 
   fetch("kanji-svg/"+code+".svg")
   .then(res=>{
-    if(!res.ok){
-      throw new Error("SVGが見つかりません");
-    }
+    if(!res.ok) throw new Error("SVGが見つかりません");
     return res.text();
   })
   .then(svg=>{
@@ -154,27 +151,22 @@ function loadSVG(kanji){
   });
 }
 
-// ===== 描画処理（完全修正版） =====
-
+// ===== 描画処理 =====
 canvas.addEventListener("pointerdown",(e)=>{
   drawing=true;
   strokeCount++;
-
   const rect=canvas.getBoundingClientRect();
   const x=e.clientX-rect.left;
   const y=e.clientY-rect.top;
-
-  ctx.beginPath();     // ← 前の線を完全に切る
-  ctx.moveTo(x,y);     // ← 新しい線開始
+  ctx.beginPath();
+  ctx.moveTo(x,y);
 });
 
 canvas.addEventListener("pointermove",(e)=>{
-  if(!drawing)return;
-
+  if(!drawing) return;
   const rect=canvas.getBoundingClientRect();
   const x=e.clientX-rect.left;
   const y=e.clientY-rect.top;
-
   if(eraser){
     ctx.clearRect(x-eraserSize/2,y-eraserSize/2,eraserSize,eraserSize);
   }else{
@@ -186,27 +178,12 @@ canvas.addEventListener("pointermove",(e)=>{
   }
 });
 
-canvas.addEventListener("pointerup",()=>{
-  drawing=false;
-  ctx.beginPath();  // ← これが重要
-});
-
-canvas.addEventListener("pointerleave",()=>{
-  drawing=false;
-  ctx.beginPath();
-});
+canvas.addEventListener("pointerup",()=>{drawing=false;ctx.beginPath();});
+canvas.addEventListener("pointerleave",()=>{drawing=false;ctx.beginPath();});
 
 // ===== ボタン =====
-function clearCanvas(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.beginPath();
-  strokeCount=0;
-}
-
-function toggleEraser(){
-  eraser=!eraser;
-}
-
+function clearCanvas(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.beginPath();strokeCount=0;}
+function toggleEraser(){eraser=!eraser;}
 function checkAnswer(){
   let result=document.getElementById("result");
   let kan=document.getElementById("kanji").value;
