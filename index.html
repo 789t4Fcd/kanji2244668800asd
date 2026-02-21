@@ -16,7 +16,7 @@ body{
   text-align:center;
 }
 select, button{
-  font-size:18px;
+  font-size:16px; /* 通常サイズ */
   padding:5px;
   margin:5px;
 }
@@ -34,7 +34,7 @@ canvas{
 .correct{color:green;font-weight:bold;}
 .wrong{color:red;font-weight:bold;}
 #kanjiDisplay{
-  font-size:72px;
+  font-size:48px;
   display:inline-block;
   vertical-align:top;
   margin-right:10px;
@@ -47,9 +47,14 @@ canvas{
 }
 #mainDisplay{
   display:flex;
-  justify-content:center;
+  justify-content:flex-start; /* 左寄せ */
   align-items:flex-start;
   margin-top:20px;
+}
+#handwritingCanvas{
+  margin-top:20px;
+  margin-left:20px; /* 左寄せ */
+  display:block;
 }
 </style>
 </head>
@@ -84,7 +89,9 @@ canvas{
   <div id="strokeArea"></div>
 </div>
 
-<canvas id="canvas"></canvas>
+<!-- 手書きキャンバス 縦に左寄せ -->
+<canvas id="canvas" width="400" height="400"></canvas>
+
 <div id="result"></div>
 
 <script>
@@ -107,7 +114,7 @@ let eraserSize=25;
 // ===== Retina対応 =====
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
-  const width=800;
+  const width=400;
   const height=400;
   canvas.width=width*ratio;
   canvas.height=height*ratio;
@@ -120,7 +127,7 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 左右2マス、各マス4分割の点線 =====
+// ===== 手書きマス 縦並び 左寄せ =====
 function drawGrid(){
   const w=canvas.width/(window.devicePixelRatio||1);
   const h=canvas.height/(window.devicePixelRatio||1);
@@ -128,22 +135,21 @@ function drawGrid(){
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  const boxWidth=w/2;
-  const boxHeight=h;
+  const boxHeight=h/2; // 縦2マス
+  const boxWidth=w;
 
-  for(let col=0;col<2;col++){
+  for(let row=0;row<2;row++){
     // 外枠
     ctx.beginPath();
-    ctx.strokeStyle="#aaa";
-    ctx.strokeRect(col*boxWidth,0,boxWidth,boxHeight);
+    ctx.strokeRect(0,row*boxHeight,boxWidth,boxHeight);
 
     // 中線（縦横4分割）
     ctx.setLineDash([5,5]);
     ctx.beginPath();
-    ctx.moveTo(col*boxWidth+boxWidth/2,0);
-    ctx.lineTo(col*boxWidth+boxWidth/2,boxHeight);
-    ctx.moveTo(col*boxWidth,boxHeight/2);
-    ctx.lineTo((col+1)*boxWidth,boxHeight/2);
+    ctx.moveTo(boxWidth/2,row*boxHeight);
+    ctx.lineTo(boxWidth/2,(row+1)*boxHeight);
+    ctx.moveTo(0,row*boxHeight+boxHeight/2);
+    ctx.lineTo(boxWidth,row*boxHeight+boxHeight/2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -204,7 +210,7 @@ function showKanji(){
   loadSVG(kan);
 }
 
-// ===== SVG読み込み（無限ループ） =====
+// ===== SVG読み込み（無限ループ、前の画残す） =====
 function loadSVG(kanji){
   let code=kanji.charCodeAt(0).toString(16).padStart(4,"0");
 
@@ -227,12 +233,9 @@ function loadSVG(kanji){
       });
       function showStroke(){
         if(paths.length===0) return;
-        paths.forEach((p,j)=>{
-          if(j!==i)p.style.strokeDashoffset=1000;
-        });
         let p=paths[i];
         p.style.transition="stroke-dashoffset 0.5s";
-        p.style.strokeDashoffset=0;
+        p.style.strokeDashoffset=0; // 前の画は消えない
         i=(i+1)%paths.length;
         setTimeout(showStroke,600);
       }
