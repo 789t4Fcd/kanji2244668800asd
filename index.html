@@ -24,6 +24,7 @@ canvas{
   touch-action:none;
   display:block;
   margin:10px 0 0 20px; /* 左寄せ */
+  position: relative;
 }
 #strokeArea svg{
   width:200px;
@@ -49,6 +50,15 @@ canvas{
   align-items:flex-start;
   margin-top:20px;
 }
+#canvasContainer{
+  position: relative;
+  display: inline-block;
+}
+#clearButton{
+  position: absolute;
+  top: -35px;
+  left: 0;
+}
 </style>
 </head>
 <body>
@@ -61,9 +71,8 @@ canvas{
 </div>
 
 <div style="text-align:center;">
-  <button onclick="clearCanvas()">消す</button>
-  <button onclick="toggleEraser()">消しゴム</button>
-  <button onclick="checkAnswer()">判定</button>
+  <button id="eraseBtn" onclick="toggleEraser()">消しゴム</button>
+  <button id="checkBtn" onclick="checkAnswer()">判定</button>
 </div>
 
 <div id="mainDisplay">
@@ -74,7 +83,11 @@ canvas{
   <div id="strokeArea"></div>
 </div>
 
-<canvas id="canvas"></canvas>
+<div id="canvasContainer">
+  <button id="clearButton" onclick="clearCanvas()">消す</button>
+  <canvas id="canvas"></canvas>
+</div>
+
 <div id="result"></div>
 
 <script>
