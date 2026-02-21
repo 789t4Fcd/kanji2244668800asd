@@ -93,7 +93,7 @@ let eraserSize=25;
 // ===== マスサイズ固定 =====
 const boxSize = 250; // 1マスの正方形サイズ
 canvas.width = boxSize;
-canvas.height = boxSize * 2; // 上下2マス
+canvas.height = boxSize * 3; // 上中下3マス
 drawGrid();
 
 // ===== 手書きマス描画 =====
@@ -102,7 +102,7 @@ function drawGrid(){
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  for(let row=0; row<2; row++){
+  for(let row=0; row<3; row++){
     const y = row * boxSize;
     ctx.strokeRect(0, y, boxSize, boxSize);
   }
