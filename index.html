@@ -90,12 +90,11 @@ let correctStrokeCount=0;
 let penSize=8;
 let eraserSize=25;
 
-// ===== Retina対応 + 縦横比2:1 =====
+// ===== キャンバス設定 =====
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
-  const width=400;
-  const height=800; // 縦横比2:1
-
+  const width=200;  // マスの幅に合わせる
+  const height=200*2; // 上下2つの正方形
   canvas.width=width*ratio;
   canvas.height=height*ratio;
   canvas.style.width=width+"px";
@@ -107,7 +106,7 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 手書きマス（上下2行・正方形、適正サイズ） =====
+// ===== 上下2つの正方形マスだけ描画 =====
 function drawGrid(){
   const w=canvas.width/(window.devicePixelRatio||1);
   const h=canvas.height/(window.devicePixelRatio||1);
@@ -115,9 +114,7 @@ function drawGrid(){
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  // マスサイズを幅の50%に縮小
-  const boxSize = w * 0.5;
-
+  const boxSize = w; // 幅いっぱいの正方形
   for(let row=0; row<2; row++){
     const y = row * boxSize;
     ctx.strokeRect(0, y, boxSize, boxSize);
