@@ -115,7 +115,7 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 手書きマス（縦2マス・正方形） =====
+// ===== 手書きマス（2行1列・正方形マス） =====
 function drawGrid(){
   const w=canvas.width/(window.devicePixelRatio||1);
   const h=canvas.height/(window.devicePixelRatio||1);
@@ -124,21 +124,12 @@ function drawGrid(){
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  const boxSize = Math.min(w, h/2); // 正方形
+  const boxSize = Math.min(w, h/2);
+
   for(let row=0; row<2; row++){
     const y = row * boxSize;
-    // 外枠
+    // 外枠のみ
     ctx.strokeRect(0, y, boxSize, boxSize);
-
-    // 中線で4分割
-    ctx.setLineDash([5,5]);
-    ctx.beginPath();
-    ctx.moveTo(boxSize/2, y);
-    ctx.lineTo(boxSize/2, y+boxSize);
-    ctx.moveTo(0, y+boxSize/2);
-    ctx.lineTo(boxSize, y+boxSize/2);
-    ctx.stroke();
-    ctx.setLineDash([]);
   }
 }
 
@@ -214,13 +205,6 @@ function loadSVG(kanji){
     let current = 0;
 
     function animate(){
-      // すべての画をリセット
-      paths.forEach(p=>{
-        p.style.transition="";
-        p.style.strokeDasharray=1000;
-        p.style.strokeDashoffset=1000;
-      });
-
       function showStroke(){
         if(paths.length===0) return;
 
@@ -229,7 +213,7 @@ function loadSVG(kanji){
 
         current++;
         if(current >= paths.length){
-          // 全部描いたら1秒待って消して0に戻す
+          // 全部描いたら一旦全消しして再スタート
           setTimeout(()=>{
             paths.forEach(p=>{
               p.style.transition="";
@@ -246,6 +230,11 @@ function loadSVG(kanji){
       showStroke();
     }
 
+    // 初回アニメ開始
+    paths.forEach(p=>{
+      p.style.strokeDasharray=1000;
+      p.style.strokeDashoffset=1000;
+    });
     animate();
 
   })
