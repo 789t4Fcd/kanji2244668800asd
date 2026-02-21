@@ -9,18 +9,18 @@
 
 <style>
 body{font-family:sans-serif;text-align:center;background:#f2f2f2;}
-select,button{font-size:72px;padding:8px;margin:5px;} /* 4倍 */
+select,button{font-size:36px;padding:8px;margin:5px;} /* 2倍 */
 canvas{border:2px solid #000;background:#fff;touch-action:none;}
 #strokeArea svg{width:200px;height:200px;}
-.correct{color:green;font-weight:bold;font-size:72px;}
-.wrong{color:red;font-weight:bold;font-size:72px;}
-#kanjiDisplay{font-size:200px; display:inline-block; vertical-align:top; margin-right:10px;}
+.correct{color:green;font-weight:bold;font-size:36px;}
+.wrong{color:red;font-weight:bold;font-size:36px;}
+#kanjiDisplay{font-size:100px; display:inline-block; vertical-align:top; margin-right:10px;}
 #strokeArea{display:inline-block;}
 </style>
 </head>
 <body>
 
-<h2 style="font-size:72px;">漢字練習アプリ</h2>
+<h2 style="font-size:36px;">漢字練習アプリ</h2>
 
 学年：
 <select id="grade"></select>
@@ -34,7 +34,7 @@ canvas{border:2px solid #000;background:#fff;touch-action:none;}
 <button onclick="toggleEraser()">消しゴム</button>
 <button onclick="checkAnswer()">判定</button>
 
-<div id="info" style="font-size:72px;"></div>
+<div id="info" style="font-size:36px;"></div>
 
 <div>
   <div id="kanjiDisplay"></div>
@@ -64,8 +64,8 @@ let eraserSize=25;
 // ===== Retina対応 =====
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
-  const width=800;   // 2マス分
-  const height=400;  // 2行分
+  const width=800;   // 左右2マス
+  const height=400;  // マスの高さ
   canvas.width=width*ratio;
   canvas.height=height*ratio;
   canvas.style.width=width+"px";
@@ -77,13 +77,14 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 4分割マスと熟語用左右2マス =====
+// ===== 左右2マス、各マス4分割の点線 =====
 function drawGrid(){
-  const w=canvas.width/ (window.devicePixelRatio||1);
-  const h=canvas.height/ (window.devicePixelRatio||1);
+  const w=canvas.width/(window.devicePixelRatio||1);
+  const h=canvas.height/(window.devicePixelRatio||1);
   ctx.clearRect(0,0,w,h);
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
+
   // 左右2マス
   for(let i=1;i<2;i++){
     ctx.beginPath();
@@ -91,18 +92,23 @@ function drawGrid(){
     ctx.lineTo(w*i/2,h);
     ctx.stroke();
   }
-  // 縦横2分割
-  for(let i=1;i<2;i++){
+
+  // 各マスを4分割（縦横中線）
+  const boxWidth=w/2;
+  const boxHeight=h;
+  for(let col=0;col<2;col++){
+    // 横線
     ctx.beginPath();
-    ctx.moveTo(0,h*i/2);
-    ctx.lineTo(w,h*i/2);
+    ctx.setLineDash([5,5]);
+    ctx.moveTo(col*boxWidth,boxHeight/2);
+    ctx.lineTo((col+1)*boxWidth,boxHeight/2);
     ctx.stroke();
-  }
-  for(let i=1;i<2;i++){
+    // 縦線
     ctx.beginPath();
-    ctx.moveTo(w*i/2,0);
-    ctx.lineTo(w*i/2,h);
+    ctx.moveTo(col*boxWidth+boxWidth/2,0);
+    ctx.lineTo(col*boxWidth+boxWidth/2,boxHeight);
     ctx.stroke();
+    ctx.setLineDash([]);
   }
 }
 
@@ -156,7 +162,7 @@ function showKanji(){
     "訓："+info.kun.join(", ")+"<br>"+
     "熟語："+info.jukugo.join(", ");
 
-  // 常に完成漢字を左に表示
+  // 完成漢字を左に表示
   document.getElementById("kanjiDisplay").innerHTML=kan;
 
   loadSVG(kan);
@@ -187,7 +193,7 @@ function loadSVG(kanji){
         let p=paths[i];
         p.style.transition="stroke-dashoffset 0.5s";
         p.style.strokeDashoffset=0;
-        i=(i+1)%paths.length; // ループ
+        i=(i+1)%paths.length; // 無限ループ
         setTimeout(showStroke,600);
       }
       showStroke();
