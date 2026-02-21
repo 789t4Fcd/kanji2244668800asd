@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>漢字練習 完全版</title>
 
-<link rel="manifest" href="manifest.json">
-
 <style>
 body{
   font-family:sans-serif;
@@ -84,16 +82,11 @@ canvas{
   <div id="strokeArea"></div>
 </div>
 
-<!-- 手書きキャンバス 縦並び 左寄せ -->
+<!-- 手書きキャンバス -->
 <canvas id="canvas" width="400" height="400"></canvas>
-
 <div id="result"></div>
 
 <script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('service-worker.js');
-}
-
 let data;
 let canvas=document.getElementById("canvas");
 let ctx=canvas.getContext("2d");
@@ -122,29 +115,28 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 手書きマス 縦2マス 左寄せ =====
+// ===== 手書きマス（縦2マス・正方形） =====
 function drawGrid(){
   const w=canvas.width/(window.devicePixelRatio||1);
   const h=canvas.height/(window.devicePixelRatio||1);
+
   ctx.clearRect(0,0,w,h);
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  const boxHeight=h/2;
-  const boxWidth=w;
-
+  const boxSize = Math.min(w, h/2); // 正方形
   for(let row=0; row<2; row++){
+    const y = row * boxSize;
     // 外枠
-    ctx.beginPath();
-    ctx.strokeRect(0, row*boxHeight, boxWidth, boxHeight);
+    ctx.strokeRect(0, y, boxSize, boxSize);
 
-    // 中線（4分割）
+    // 中線で4分割
     ctx.setLineDash([5,5]);
     ctx.beginPath();
-    ctx.moveTo(boxWidth/2, row*boxHeight);
-    ctx.lineTo(boxWidth/2, (row+1)*boxHeight);
-    ctx.moveTo(0, row*boxHeight + boxHeight/2);
-    ctx.lineTo(boxWidth, row*boxHeight + boxHeight/2);
+    ctx.moveTo(boxSize/2, y);
+    ctx.lineTo(boxSize/2, y+boxSize);
+    ctx.moveTo(0, y+boxSize/2);
+    ctx.lineTo(boxSize, y+boxSize/2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -205,7 +197,7 @@ function showKanji(){
   loadSVG(kan);
 }
 
-// ===== SVG読み込み（無限ループ、前の画を消さない） =====
+// ===== SVG読み込み（無限ループ・前の画残す・全消し後再スタート） =====
 function loadSVG(kanji){
   let code=kanji.charCodeAt(0).toString(16).padStart(4,"0");
 
@@ -216,26 +208,46 @@ function loadSVG(kanji){
   })
   .then(svg=>{
     document.getElementById("strokeArea").innerHTML=svg;
-    let paths=document.querySelectorAll("#strokeArea svg path");
-    correctStrokeCount=paths.length;
+    const paths = document.querySelectorAll("#strokeArea svg path");
+    correctStrokeCount = paths.length;
 
-    let i=0;
+    let current = 0;
+
     function animate(){
+      // すべての画をリセット
       paths.forEach(p=>{
         p.style.transition="";
         p.style.strokeDasharray=1000;
         p.style.strokeDashoffset=1000;
       });
+
       function showStroke(){
         if(paths.length===0) return;
-        paths[i].style.transition="stroke-dashoffset 0.5s";
-        paths[i].style.strokeDashoffset=0; // 前の画は消さない
-        i = (i + 1) % paths.length; // 無限ループ
-        setTimeout(showStroke, 600);
+
+        paths[current].style.transition="stroke-dashoffset 0.5s";
+        paths[current].style.strokeDashoffset=0;
+
+        current++;
+        if(current >= paths.length){
+          // 全部描いたら1秒待って消して0に戻す
+          setTimeout(()=>{
+            paths.forEach(p=>{
+              p.style.transition="";
+              p.style.strokeDasharray=1000;
+              p.style.strokeDashoffset=1000;
+            });
+            current = 0;
+            setTimeout(showStroke, 500);
+          }, 1000);
+        } else {
+          setTimeout(showStroke, 600);
+        }
       }
       showStroke();
     }
+
     animate();
+
   })
   .catch(()=>{
     document.getElementById("strokeArea").innerHTML=
