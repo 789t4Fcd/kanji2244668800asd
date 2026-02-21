@@ -16,7 +16,7 @@ body{
   text-align:center;
 }
 select, button{
-  font-size:16px; /* 通常サイズ */
+  font-size:16px;
   padding:5px;
   margin:5px;
 }
@@ -25,7 +25,7 @@ canvas{
   background:#fff;
   touch-action:none;
   display:block;
-  margin:10px auto;
+  margin:10px 0 0 20px; /* 左寄せ */
 }
 #strokeArea svg{
   width:200px;
@@ -47,14 +47,9 @@ canvas{
 }
 #mainDisplay{
   display:flex;
-  justify-content:flex-start; /* 左寄せ */
+  justify-content:flex-start;
   align-items:flex-start;
   margin-top:20px;
-}
-#handwritingCanvas{
-  margin-top:20px;
-  margin-left:20px; /* 左寄せ */
-  display:block;
 }
 </style>
 </head>
@@ -89,7 +84,7 @@ canvas{
   <div id="strokeArea"></div>
 </div>
 
-<!-- 手書きキャンバス 縦に左寄せ -->
+<!-- 手書きキャンバス 縦並び 左寄せ -->
 <canvas id="canvas" width="400" height="400"></canvas>
 
 <div id="result"></div>
@@ -127,7 +122,7 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 手書きマス 縦並び 左寄せ =====
+// ===== 手書きマス 縦2マス 左寄せ =====
 function drawGrid(){
   const w=canvas.width/(window.devicePixelRatio||1);
   const h=canvas.height/(window.devicePixelRatio||1);
@@ -135,21 +130,21 @@ function drawGrid(){
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  const boxHeight=h/2; // 縦2マス
+  const boxHeight=h/2;
   const boxWidth=w;
 
-  for(let row=0;row<2;row++){
+  for(let row=0; row<2; row++){
     // 外枠
     ctx.beginPath();
-    ctx.strokeRect(0,row*boxHeight,boxWidth,boxHeight);
+    ctx.strokeRect(0, row*boxHeight, boxWidth, boxHeight);
 
-    // 中線（縦横4分割）
+    // 中線（4分割）
     ctx.setLineDash([5,5]);
     ctx.beginPath();
-    ctx.moveTo(boxWidth/2,row*boxHeight);
-    ctx.lineTo(boxWidth/2,(row+1)*boxHeight);
-    ctx.moveTo(0,row*boxHeight+boxHeight/2);
-    ctx.lineTo(boxWidth,row*boxHeight+boxHeight/2);
+    ctx.moveTo(boxWidth/2, row*boxHeight);
+    ctx.lineTo(boxWidth/2, (row+1)*boxHeight);
+    ctx.moveTo(0, row*boxHeight + boxHeight/2);
+    ctx.lineTo(boxWidth, row*boxHeight + boxHeight/2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
@@ -210,7 +205,7 @@ function showKanji(){
   loadSVG(kan);
 }
 
-// ===== SVG読み込み（無限ループ、前の画残す） =====
+// ===== SVG読み込み（無限ループ、前の画を消さない） =====
 function loadSVG(kanji){
   let code=kanji.charCodeAt(0).toString(16).padStart(4,"0");
 
@@ -233,11 +228,10 @@ function loadSVG(kanji){
       });
       function showStroke(){
         if(paths.length===0) return;
-        let p=paths[i];
-        p.style.transition="stroke-dashoffset 0.5s";
-        p.style.strokeDashoffset=0; // 前の画は消えない
-        i=(i+1)%paths.length;
-        setTimeout(showStroke,600);
+        paths[i].style.transition="stroke-dashoffset 0.5s";
+        paths[i].style.strokeDashoffset=0; // 前の画は消さない
+        i = (i + 1) % paths.length; // 無限ループ
+        setTimeout(showStroke, 600);
       }
       showStroke();
     }
