@@ -55,35 +55,26 @@ canvas{
 
 <h2>漢字練習アプリ</h2>
 
-<!-- 学年・漢字 横並び -->
 <div style="text-align:center;">
   <label>学年：<select id="grade"></select></label>
   <label>漢字：<select id="kanji"></select></label>
 </div>
 
-<!-- ボタン -->
 <div style="text-align:center;">
   <button onclick="clearCanvas()">消す</button>
   <button onclick="toggleEraser()">消しゴム</button>
   <button onclick="checkAnswer()">判定</button>
 </div>
 
-<!-- メイン表示エリア -->
 <div id="mainDisplay">
-  <!-- 音・訓・熟語 -->
   <div class="info-list">
     <div id="info"></div>
   </div>
-
-  <!-- 完成漢字 -->
   <div id="kanjiDisplay"></div>
-
-  <!-- 書き順SVG -->
   <div id="strokeArea"></div>
 </div>
 
-<!-- 手書きキャンバス -->
-<canvas id="canvas" width="400" height="400"></canvas>
+<canvas id="canvas"></canvas>
 <div id="result"></div>
 
 <script>
@@ -99,11 +90,12 @@ let correctStrokeCount=0;
 let penSize=8;
 let eraserSize=25;
 
-// ===== Retina対応 =====
+// ===== Retina対応 + 縦横比2:1 =====
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
   const width=400;
-  const height=400;
+  const height=800; // 縦横比2:1
+
   canvas.width=width*ratio;
   canvas.height=height*ratio;
   canvas.style.width=width+"px";
@@ -115,20 +107,18 @@ function resizeCanvas(){
 }
 resizeCanvas();
 
-// ===== 手書きマス（2行1列・正方形マス） =====
+// ===== 手書きマス（縦2行1列・正方形マス） =====
 function drawGrid(){
   const w=canvas.width/(window.devicePixelRatio||1);
   const h=canvas.height/(window.devicePixelRatio||1);
-
   ctx.clearRect(0,0,w,h);
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
 
-  const boxSize = Math.min(w, h/2);
+  const boxSize = Math.min(w, h/2); // 正方形マスのサイズ
 
   for(let row=0; row<2; row++){
     const y = row * boxSize;
-    // 外枠のみ
     ctx.strokeRect(0, y, boxSize, boxSize);
   }
 }
@@ -198,6 +188,7 @@ function loadSVG(kanji){
     return res.text();
   })
   .then(svg=>{
+    svg = svg.trim(); // 不要文字削除
     document.getElementById("strokeArea").innerHTML=svg;
     const paths = document.querySelectorAll("#strokeArea svg path");
     correctStrokeCount = paths.length;
@@ -213,7 +204,6 @@ function loadSVG(kanji){
 
         current++;
         if(current >= paths.length){
-          // 全部描いたら一旦全消しして再スタート
           setTimeout(()=>{
             paths.forEach(p=>{
               p.style.transition="";
@@ -230,7 +220,6 @@ function loadSVG(kanji){
       showStroke();
     }
 
-    // 初回アニメ開始
     paths.forEach(p=>{
       p.style.strokeDasharray=1000;
       p.style.strokeDashoffset=1000;
