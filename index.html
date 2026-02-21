@@ -8,38 +8,79 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-body{font-family:sans-serif;background:#f2f2f2;margin:0;padding:0;}
-.container{display:flex; justify-content:space-between; padding:10px;}
-.left-panel{flex:1; text-align:left;}
-.right-panel{flex:1; text-align:left; font-size:36px;}
-select,button{font-size:36px;padding:8px;margin:5px;}
-canvas{border:2px solid #000;background:#fff;touch-action:none;}
-#strokeArea svg{width:200px;height:200px;}
-.correct{color:green;font-weight:bold;font-size:36px;}
-.wrong{color:red;font-weight:bold;font-size:36px;}
-#kanjiDisplay{font-size:100px; display:inline-block; vertical-align:top; margin-right:10px;}
-#strokeArea{display:inline-block;}
+body{
+  font-family:sans-serif;
+  background:#f2f2f2;
+  margin:0;
+  padding:0;
+  text-align:center;
+}
+select, button{
+  font-size:18px;
+  padding:5px;
+  margin:5px;
+}
+canvas{
+  border:2px solid #000;
+  background:#fff;
+  touch-action:none;
+  display:block;
+  margin:10px auto;
+}
+#strokeArea svg{
+  width:200px;
+  height:200px;
+}
+.correct{color:green;font-weight:bold;}
+.wrong{color:red;font-weight:bold;}
+#kanjiDisplay{
+  font-size:72px;
+  display:inline-block;
+  vertical-align:top;
+  margin-right:10px;
+}
+.info-list{
+  display:flex;
+  flex-direction:column;
+  text-align:left;
+  margin-right:10px;
+}
+#mainDisplay{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  margin-top:20px;
+}
 </style>
 </head>
 <body>
 
-<h2 style="font-size:36px; text-align:center;">漢字練習アプリ</h2>
+<h2>漢字練習アプリ</h2>
 
-<div class="container">
-  <div class="left-panel">
-    学年：<select id="grade"></select><br>
-    漢字：<select id="kanji"></select><br>
-    <button onclick="clearCanvas()">消す</button>
-    <button onclick="toggleEraser()">消しゴム</button>
-    <button onclick="checkAnswer()">判定</button>
-  </div>
-  <div class="right-panel">
-    <div id="info"></div>
-  </div>
+<!-- 学年・漢字 横並び -->
+<div style="text-align:center;">
+  <label>学年：<select id="grade"></select></label>
+  <label>漢字：<select id="kanji"></select></label>
 </div>
 
-<div style="display:flex; justify-content:center; align-items:flex-start; margin-top:20px;">
+<!-- ボタン -->
+<div style="text-align:center;">
+  <button onclick="clearCanvas()">消す</button>
+  <button onclick="toggleEraser()">消しゴム</button>
+  <button onclick="checkAnswer()">判定</button>
+</div>
+
+<!-- メイン表示エリア -->
+<div id="mainDisplay">
+  <!-- 音・訓・熟語 -->
+  <div class="info-list">
+    <div id="info"></div>
+  </div>
+
+  <!-- 完成漢字 -->
   <div id="kanjiDisplay"></div>
+
+  <!-- 書き順SVG -->
   <div id="strokeArea"></div>
 </div>
 
@@ -66,7 +107,7 @@ let eraserSize=25;
 // ===== Retina対応 =====
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
-  const width=800;   // 左右2マス
+  const width=800;
   const height=400;
   canvas.width=width*ratio;
   canvas.height=height*ratio;
@@ -102,7 +143,7 @@ function drawGrid(){
     ctx.moveTo(col*boxWidth+boxWidth/2,0);
     ctx.lineTo(col*boxWidth+boxWidth/2,boxHeight);
     ctx.moveTo(col*boxWidth,boxHeight/2);
-    ctx.lineTo(col*boxWidth+boxWidth,boxHeight/2);
+    ctx.lineTo((col+1)*boxWidth,boxHeight/2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
