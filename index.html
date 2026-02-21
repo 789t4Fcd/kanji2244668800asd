@@ -11,7 +11,6 @@ body{
   background:#f2f2f2;
   margin:0;
   padding:0;
-  text-align:center;
 }
 select, button{
   font-size:16px;
@@ -23,8 +22,6 @@ canvas{
   background:#fff;
   touch-action:none;
   display:block;
-  margin:10px 0 0 20px; /* 左寄せ */
-  position: relative;
 }
 #strokeArea svg{
   width:200px;
@@ -53,6 +50,7 @@ canvas{
 #canvasContainer{
   position: relative;
   display: inline-block;
+  margin-left: 20px; /* 左寄せ */
 }
 #clearButton{
   position: absolute;
@@ -63,14 +61,14 @@ canvas{
 </head>
 <body>
 
-<h2>漢字練習アプリ</h2>
+<h2 style="text-align:left; margin-left:20px;">漢字練習アプリ</h2>
 
-<div style="text-align:center;">
+<div style="text-align:left; margin-left:20px;">
   <label>学年：<select id="grade"></select></label>
   <label>漢字：<select id="kanji"></select></label>
 </div>
 
-<div style="text-align:center;">
+<div style="text-align:left; margin-left:20px;">
   <button id="eraseBtn" onclick="toggleEraser()">消しゴム</button>
   <button id="checkBtn" onclick="checkAnswer()">判定</button>
 </div>
@@ -88,7 +86,7 @@ canvas{
   <canvas id="canvas"></canvas>
 </div>
 
-<div id="result"></div>
+<div id="result" style="margin-left:20px;"></div>
 
 <script>
 let data;
@@ -114,7 +112,6 @@ function drawGrid(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.lineWidth=1;
   ctx.strokeStyle="#aaa";
-
   for(let row=0; row<3; row++){
     const y = row * boxSize;
     ctx.strokeRect(0, y, boxSize, boxSize);
