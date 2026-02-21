@@ -9,16 +9,18 @@
 
 <style>
 body{font-family:sans-serif;text-align:center;background:#f2f2f2;}
-select,button{font-size:18px;padding:8px;margin:5px;}
+select,button{font-size:72px;padding:8px;margin:5px;} /* 4倍 */
 canvas{border:2px solid #000;background:#fff;touch-action:none;}
 #strokeArea svg{width:200px;height:200px;}
-.correct{color:green;font-weight:bold;}
-.wrong{color:red;font-weight:bold;}
+.correct{color:green;font-weight:bold;font-size:72px;}
+.wrong{color:red;font-weight:bold;font-size:72px;}
+#kanjiDisplay{font-size:200px; display:inline-block; vertical-align:top; margin-right:10px;}
+#strokeArea{display:inline-block;}
 </style>
 </head>
 <body>
 
-<h2>漢字練習アプリ</h2>
+<h2 style="font-size:72px;">漢字練習アプリ</h2>
 
 学年：
 <select id="grade"></select>
@@ -32,8 +34,13 @@ canvas{border:2px solid #000;background:#fff;touch-action:none;}
 <button onclick="toggleEraser()">消しゴム</button>
 <button onclick="checkAnswer()">判定</button>
 
-<div id="info"></div>
-<div id="strokeArea"></div>
+<div id="info" style="font-size:72px;"></div>
+
+<div>
+  <div id="kanjiDisplay"></div>
+  <div id="strokeArea"></div>
+</div>
+
 <canvas id="canvas"></canvas>
 <div id="result"></div>
 
@@ -57,15 +64,47 @@ let eraserSize=25;
 // ===== Retina対応 =====
 function resizeCanvas(){
   const ratio=window.devicePixelRatio||1;
-  const size=400;
-  canvas.width=size*ratio;
-  canvas.height=size*ratio;
-  canvas.style.width=size+"px";
-  canvas.style.height=size+"px";
+  const width=800;   // 2マス分
+  const height=400;  // 2行分
+  canvas.width=width*ratio;
+  canvas.height=height*ratio;
+  canvas.style.width=width+"px";
+  canvas.style.height=height+"px";
   ctx.setTransform(1,0,0,1,0,0);
   ctx.scale(ratio,ratio);
+
+  drawGrid();
 }
 resizeCanvas();
+
+// ===== 4分割マスと熟語用左右2マス =====
+function drawGrid(){
+  const w=canvas.width/ (window.devicePixelRatio||1);
+  const h=canvas.height/ (window.devicePixelRatio||1);
+  ctx.clearRect(0,0,w,h);
+  ctx.lineWidth=1;
+  ctx.strokeStyle="#aaa";
+  // 左右2マス
+  for(let i=1;i<2;i++){
+    ctx.beginPath();
+    ctx.moveTo(w*i/2,0);
+    ctx.lineTo(w*i/2,h);
+    ctx.stroke();
+  }
+  // 縦横2分割
+  for(let i=1;i<2;i++){
+    ctx.beginPath();
+    ctx.moveTo(0,h*i/2);
+    ctx.lineTo(w,h*i/2);
+    ctx.stroke();
+  }
+  for(let i=1;i<2;i++){
+    ctx.beginPath();
+    ctx.moveTo(w*i/2,0);
+    ctx.lineTo(w*i/2,h);
+    ctx.stroke();
+  }
+}
 
 // ===== データ読み込み =====
 fetch("kanji-data.json")
@@ -117,12 +156,14 @@ function showKanji(){
     "訓："+info.kun.join(", ")+"<br>"+
     "熟語："+info.jukugo.join(", ");
 
+  // 常に完成漢字を左に表示
+  document.getElementById("kanjiDisplay").innerHTML=kan;
+
   loadSVG(kan);
 }
 
-// ===== SVG読み込み =====
+// ===== SVG読み込み（無限ループ対応） =====
 function loadSVG(kanji){
-  // ✅ 16進数コードを4桁にゼロ埋め
   let code=kanji.charCodeAt(0).toString(16).padStart(4,"0");
 
   fetch("kanji-svg/"+code+".svg")
@@ -135,14 +176,23 @@ function loadSVG(kanji){
     let paths=document.querySelectorAll("#strokeArea svg path");
     correctStrokeCount=paths.length;
 
-    paths.forEach((p,i)=>{
-      p.style.strokeDasharray=1000;
-      p.style.strokeDashoffset=1000;
-      setTimeout(()=>{
+    let i=0;
+    function animate(){
+      paths.forEach(p=>{
+        p.style.transition="";
+        p.style.strokeDasharray=1000;
+        p.style.strokeDashoffset=1000;
+      });
+      function showStroke(){
+        let p=paths[i];
         p.style.transition="stroke-dashoffset 0.5s";
         p.style.strokeDashoffset=0;
-      },i*600);
-    });
+        i=(i+1)%paths.length; // ループ
+        setTimeout(showStroke,600);
+      }
+      showStroke();
+    }
+    animate();
   })
   .catch(()=>{
     document.getElementById("strokeArea").innerHTML=
@@ -182,7 +232,7 @@ canvas.addEventListener("pointerup",()=>{drawing=false;ctx.beginPath();});
 canvas.addEventListener("pointerleave",()=>{drawing=false;ctx.beginPath();});
 
 // ===== ボタン =====
-function clearCanvas(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.beginPath();strokeCount=0;}
+function clearCanvas(){drawGrid(); ctx.beginPath(); strokeCount=0;}
 function toggleEraser(){eraser=!eraser;}
 function checkAnswer(){
   let result=document.getElementById("result");
